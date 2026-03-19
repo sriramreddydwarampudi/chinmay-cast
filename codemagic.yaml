@@ -1,46 +1,33 @@
-# Codemagic configuration for Expo project
-
 workflows:
-  # Default workflow for building and testing
-  default:
-    name: Default Build
-    instance_type: mac_mini_m2 # Choose an appropriate instance type
-    macos:
-      # Specify the Xcode version to use
-      xcode: "15.3"
+  expo-android-build:
+    name: Expo Android Build (No EAS)
+
+    environment:
+      node: 18
+      java: 17
+
     scripts:
-      # Install dependencies
       - name: Install dependencies
         script: |
           npm ci
-          npm install -g eas-cli # Install EAS CLI globally
 
-      # Build for iOS
-      - name: Build iOS App
+      - name: Install Expo CLI
         script: |
-          # Ensure you have logged into EAS CLI and configured your credentials
-          # in Codemagic's environment variables or secrets.
-          # Example: CODEMAGIC_EAS_TOKEN for EAS CLI authentication.
-          # eas login --token $CODEMAGIC_EAS_TOKEN 
-          
-          # Use EAS Build to create an app build.
-          # Replace 'preview' with your desired profile (e.g., 'production', 'development').
-          eas build --platform ios --profile preview --non-interactive
+          npm install -g expo-cli
 
-      # Build for Android
-      - name: Build Android App
+      - name: Prebuild Android project
         script: |
-          # Ensure you have logged into EAS CLI and configured your credentials
-          # in Codemagic's environment variables or secrets.
-          # Example: CODEMAGIC_EAS_TOKEN for EAS CLI authentication.
-          # eas login --token $CODEMAGIC_EAS_TOKEN 
-          
-          # Use EAS Build to create an app build.
-          # Replace 'preview' with your desired profile (e.g., 'production', 'development').
-          eas build --platform android --profile preview --non-interactive
+          npx expo prebuild --platform android --no-install
 
-    # Define environment variables if needed, e.g. for API keys
-    # environment:
-    #   node: '18'
-    #   vars:
-    #     MY_API_KEY: "your_api_key_here" # Consider using Codemagic secure environment variables
+      - name: Install Android dependencies
+        script: |
+          cd android
+          ./gradlew clean
+
+      - name: Build APK
+        script: |
+          cd android
+          ./gradlew assembleRelease
+
+    artifacts:
+      - android/app/build/outputs/**/*.apk
